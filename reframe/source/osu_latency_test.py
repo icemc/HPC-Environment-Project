@@ -14,6 +14,7 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
     num_tasks_per_node = 2
     message_size = 8192
     executable_opts = ['-m', '8192', '8192']
+    build_prefix = 'osu-micro-benchmarks-7.2'
 
     # Parameter for hardware topology
     variant = parameter([
@@ -31,7 +32,7 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_variant(self):
         build = self.use_dependency('OSUBenchmarkBuildTest')
-        self.executable = os.path.join(build.stagedir, 'osu-micro-benchmarks-7.2', 'mpi', 'osu_latency')
+        self.executable = os.path.join(build.stagedir, self.build_prefix, 'c', 'mpi', 'pt2pt', 'standard', 'osu_latency')
 
         self.job.options = []
         self.time_limit = '5m'

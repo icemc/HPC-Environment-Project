@@ -53,6 +53,7 @@ site_configuration = {
       'ftn': 'mpifort',
     },
     # We can add other environments later (e.g., EESSI)
+    # module load devel/ReFrame/4.7.4-GCCcore-13.2.0
     # reframe --config-file configs/configs.py -c source/osu_build_test.py -c source/osu_bw_test.py -c source/osu_latency_test.py  -r
   ],
 }

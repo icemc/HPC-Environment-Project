@@ -9,24 +9,25 @@ class OSUBenchmarkBuildTest(rfm.CompileOnlyRegressionTest):
     valid_prog_environs = ['*']
     maintainers = ['Ludovic', 'Heriel', 'Francko']
     tags = {'osu', 'build'}
-    version = '7.2'
+
+    build_prefix = variable(str)
+    version = variable(str, value='7.2')
+
     source_tarball = f'osu-micro-benchmarks-{version}.tar.gz'
     source_url = f'https://mvapich.cse.ohio-state.edu/download/mvapich/{source_tarball}'
-    source_subdir = f'osu-micro-benchmarks-{version}/c/mpi'
 
     @run_before('compile')
     def prepare_build(self):
+        self.build_prefix = self.source_tarball[:-7]
         self.prebuild_cmds = [
             f'wget {self.source_url}',
             f'tar -xzf {self.source_tarball}',
-            f'cd {self.source_subdir} && ./configure CC=mpicc'
+            f'cd {self.build_prefix}'
         ]
-        self.build_system = 'Make'
-        self.build_system.makefile = None  # Use default Makefile
-        self.build_system.max_concurrency = 1
+        self.build_system = 'Autotools'
+        self.build_system.max_concurrency =  8
         self.build_system.options = []
-        self.build_system.srcdir = self.source_subdir
 
     @sanity_function
     def validate_build(self):
-        return sn.assert_exists(os.path.join(self.stagedir, self.source_subdir, 'osu_latency'))
+        return sn.assert_exists(os.path.join(self.stagedir, self.build_prefix, 'c', 'mpi', 'pt2pt', 'standard', 'osu_bw'))
