@@ -8,7 +8,7 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     sourcesdir = None
-    maintainers = ['you']
+    maintainers = ['Ludovic', 'Heriel', 'Francko']
     tags = {'osu', 'latency'}
     num_tasks = 2
     num_tasks_per_node = 2

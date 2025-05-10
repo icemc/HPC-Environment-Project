@@ -7,12 +7,12 @@ class OSUBenchmarkBuildTest(rfm.CompileOnlyRegressionTest):
     descr = 'Compile OSU Micro-Benchmark 7.2 from source'
     valid_systems = ['*']
     valid_prog_environs = ['*']
-    maintainers = ['you']
+    maintainers = ['Ludovic', 'Heriel', 'Francko']
     tags = {'osu', 'build'}
     version = '7.2'
     source_tarball = f'osu-micro-benchmarks-{version}.tar.gz'
     source_url = f'https://mvapich.cse.ohio-state.edu/download/mvapich/{source_tarball}'
-    source_subdir = f'osu-micro-benchmarks-{version}/mpi'
+    source_subdir = f'osu-micro-benchmarks-{version}/c/mpi'
 
     @run_before('compile')
     def prepare_build(self):
