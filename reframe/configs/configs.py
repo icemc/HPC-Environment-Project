@@ -53,5 +53,6 @@ site_configuration = {
       'ftn': 'mpifort',
     },
     # We can add other environments later (e.g., EESSI)
+    # reframe --config-file configs/configs.py -c source/osu_build_test.py -c source/osu_bw_test.py -c source/osu_latency_test.py  -r
   ],
 }

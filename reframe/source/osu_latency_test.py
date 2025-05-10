@@ -1,6 +1,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+
 @rfm.simple_test
 class OSULatencyTest(rfm.RunOnlyRegressionTest):
     descr = 'OSU Latency test with 8192-byte messages'
@@ -25,12 +26,12 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def set_dependencies(self):
-        self.depends_on('OSUBenchmarkBuildTest', how='require')
+        self.depends_on('OSUBenchmarkBuildTest')
 
     @run_before('run')
     def setup_variant(self):
-        build = self.depends_on('OSUBenchmarkBuildTest')
-        self.executable = f'{build.stagedir}/install/osu_latency'
+        build = self.use_dependency('OSUBenchmarkBuildTest')
+        self.executable = os.path.join(build.stagedir, 'osu-micro-benchmarks-7.2', 'mpi', 'osu_latency')
 
         self.job.options = []
         self.time_limit = '5m'

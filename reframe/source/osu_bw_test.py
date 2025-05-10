@@ -23,12 +23,13 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def set_dependencies(self):
-        self.depends_on('OSUBenchmarkBuildTest', how='require')
+        self.depends_on('OSUBenchmarkBuildTest')
 
     @run_before('run')
     def setup_variant(self):
-        build = self.depends_on('OSUBenchmarkBuildTest')
-        self.executable = f'{build.stagedir}/install/osu_bw'
+        build = self.use_dependency('OSUBenchmarkBuildTest')
+        self.executable = os.path.join(build.stagedir, 'osu-micro-benchmarks-7.2', 'mpi', 'osu_bw')
+
         self.time_limit = '5m'
         self.job.options = []
 
