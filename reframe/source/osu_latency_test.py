@@ -11,6 +11,7 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
     maintainers = ['Ludovic', 'Heriel', 'Francko']
     tags = {'osu', 'latency'}
     num_tasks = 2
+    num_cpus_per_task = 1
     num_tasks_per_node = 2 # Default, overridden by variant logic
     message_size = 8192 
     executable_opts = ['-m', str(message_size), str(message_size)] 
@@ -40,10 +41,12 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
         if self.variant == 'inter_node':
             self.num_tasks_per_node = 1
             self.num_tasks = 2
+            self.num_cpus_per_task = 1
         else:
             # For all other intra-node variants
             self.num_tasks_per_node = 2
             self.num_tasks = 2
+            self.num_cpus_per_task = 1
 
         # Bindings: actual control depends on MPI + scheduler
         if self.variant == 'same_numa':

@@ -11,6 +11,7 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
     maintainers = ['Ludovic', 'Heriel', 'Francko']
     tags = {'osu', 'bandwidth'}
     num_tasks = 2
+    num_cpus_per_task = 1
     num_tasks_per_node = 2 # Default, will be overridden by variant logic
     executable_opts = ['-m', '1048576', '1048576']
     build_prefix = 'osu-micro-benchmarks-7.2'
@@ -38,10 +39,12 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
         if self.variant == 'inter_node':
             self.num_tasks_per_node = 1
             self.num_tasks = 2
+            self.num_cpus_per_task = 1
         else:
             # For all other intra-node variants
             self.num_tasks_per_node = 2
             self.num_tasks = 2
+            self.num_cpus_per_task = 1
 
         if self.variant == 'same_numa':
             self.job.options += ['--cpu-bind=cores']
