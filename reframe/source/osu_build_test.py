@@ -30,4 +30,5 @@ class OSUBenchmarkBuildTest(rfm.CompileOnlyRegressionTest):
 
     @sanity_function
     def validate_build(self):
-        return sn.assert_exists(os.path.join(self.stagedir, self.build_prefix, 'c', 'mpi', 'pt2pt', 'standard', 'osu_bw'))
+        path = os.path.join(self.stagedir, self.build_prefix, 'c', 'mpi', 'pt2pt', 'standard', 'osu_bw')
+        return sn.assert_true(os.path.exists(path))
