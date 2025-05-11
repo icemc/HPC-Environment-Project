@@ -1,6 +1,6 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
-import os # <--- Add this import
+import os
 
 @rfm.simple_test
 class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
@@ -15,7 +15,7 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
     executable_opts = ['-m', '1048576', '1048576']
     build_prefix = 'osu-micro-benchmarks-7.2'
 
-    variant = rfm.parameter([
+    variant = parameter([
         'default',
         'same_numa',
         'diff_numa_same_socket',
@@ -23,11 +23,11 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
         'inter_node'
     ])
 
-    @rfm.run_after('init')
+    @run_after('init')
     def set_dependencies(self):
         self.depends_on('OSUBenchmarkBuildTest')
 
-    @rfm.run_before('run')
+    @run_before('run')
     def setup_variant(self):
         build = self.getdep('OSUBenchmarkBuildTest')
         self.executable = os.path.join(build.stagedir, self.build_prefix, 'c', 'mpi', 'pt2pt', 'standard', 'osu_bw')
@@ -62,15 +62,15 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
 
         self.descr += f' [{self.variant}]'
 
-    @rfm.sanity_function 
+    @sanity_function 
     def validate_output(self):
         return sn.assert_found(r'# OSU MPI Bandwidth Test', self.stdout)
 
-    @rfm.performance_function('MB/s') 
+    @performance_function('MB/s') 
     def bandwidth(self):
         return sn.extractsingle(r'^\s*1048576\s+(\S+)', self.stdout, 1, float)
 
-    @rfm.run_after('performance') 
+    @run_after('performance') 
     def set_reference(self):
         references = {
             'default': (12000, -0.1, 0.2, 'MB/s'),

@@ -17,7 +17,7 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
     build_prefix = 'osu-micro-benchmarks-7.2'
 
     # Parameter for hardware topology
-    variant = rfm.parameter([
+    variant = parameter([
         'default',
         'same_numa',
         'diff_numa_same_socket',
@@ -25,11 +25,11 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
         'inter_node'
     ])
 
-    @rfm.run_after('init') 
+    @run_after('init') 
     def set_dependencies(self):
         self.depends_on('OSUBenchmarkBuildTest')
 
-    @rfm.run_before('run') 
+    @run_before('run') 
     def setup_variant(self):
         build = self.getdep('OSUBenchmarkBuildTest')
         self.executable = os.path.join(build.stagedir, self.build_prefix, 'c', 'mpi', 'pt2pt', 'standard', 'osu_latency')
@@ -60,16 +60,16 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
 
         self.descr += f' [{self.variant}]'
 
-    @rfm.sanity_function
+    @sanity_function
     def validate_output(self):
         return sn.assert_found(r'# OSU MPI Latency Test', self.stdout)
 
-    @rfm.performance_function('us')
+    @performance_function('us')
     def latency(self):
         # Ensure the regex correctly matches the message size used in executable_opts
         return sn.extractsingle(rf'^\s*{self.message_size}\s+(\S+)', self.stdout, 1, float)
 
-    @rfm.run_after('performance') 
+    @run_after('performance') 
     def set_reference(self):
         references = {
             'default': (2.3, None, 0.1, 'us'),
