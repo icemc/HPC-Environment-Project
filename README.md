@@ -1,4 +1,4 @@
-0 [fkusek@aion-0002 HPC-Environment-Project](7931575 1N/T/1CN)$ reframe -C reframe/configs/configs.py -c reframe/source -r --performance-report
+sadsdasdasdasdasd0 [fkusek@aion-0002 HPC-Environment-Project](7931575 1N/T/1CN)$ reframe -C reframe/configs/configs.py -c reframe/source -r --performance-report
 [ReFrame Setup]
   version:           4.7.4
   command:           '/opt/apps/easybuild/systems/aion/rhel810-20250405/2023b/epyc/software/ReFrame/4.7.4-GCCcore-13.2.0/bin/reframe -C reframe/configs/configs.py -c reframe/source -r --performance-report'

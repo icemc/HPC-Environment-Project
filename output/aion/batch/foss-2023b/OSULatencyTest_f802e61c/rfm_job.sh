@@ -13,6 +13,7 @@
 #SBATCH --sockets-per-node=1
 #SBATCH --cores-per-socket=16
 #SBATCH --distribution=block:block
+#SBATCH --hint=nomultithread
 module load env/testing/2023b
 module load toolchain/foss/2023b
 srun --cpus-per-task=1 --cpu-bind=cores /mnt/aiongpfs/users/fkusek/HPC-Environment-Project/stage/aion/batch/foss-2023b/OSUBenchmarkBuildTest/osu-micro-benchmarks-7.2/c/mpi/pt2pt/standard/osu_latency -m 8192:8192 -x 100 -i 1000

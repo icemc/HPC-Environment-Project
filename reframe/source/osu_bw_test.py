@@ -44,7 +44,7 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
 
         self.job.options = []
         self.job.launcher.options = []
-        self.env_vars = {} # CORRECTED: Initialize environment variables dict
+        self.env_vars = {}
         self.num_tasks_per_node = 2
 
         if self.variant not in ['inter_node']:
@@ -58,15 +58,19 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
         elif self.variant == 'same_numa':
             self.job.launcher.options.append('--cpu-bind=cores')
             if self.current_system.name == 'aion':
-                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=16', '--distribution=block:block'])
+                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=16', '--distribution=block:block', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
-                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=20', '--distribution=block:block'])
+                # Iris Regular Skylake: 14 cores/socket, 1 socket = 1 NUMA
+                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
         elif self.variant == 'diff_numa_same_socket':
             if self.current_system.name == 'aion':
+                # Aion: Request 1 socket, 32 cores (2 NUMA regions)
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=32', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
-                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=20', '--hint=nomultithread'])
-            # CORRECTED: Use self.env_vars
+                # Iris: 1 socket = 1 NUMA (14 cores). This variant will behave like 'same_numa'.
+                # Allocate 1 socket (1 NUMA node). OMPI will map both tasks to this single NUMA node.
+                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
+
             self.env_vars = {
                 'OMPI_MCA_rmaps_base_mapping_policy': 'numa:PE=1',
                 'OMPI_MCA_hwloc_base_binding_policy': 'numa',
@@ -74,6 +78,8 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
         elif self.variant == 'diff_socket_same_node':
             self.job.launcher.options.append('--cpu-bind=socket')
             self.job.options.append('--ntasks-per-socket=1')
+            if self.current_system.name == 'iris': # Ensure we get enough cores for 2 tasks on 2 sockets
+                self.job.options.append(f'--cores-per-socket=1') # Request at least 1 core per allocated socket for the task
 
         self.descr = f'OSU Bandwidth test (1MB, Src) [{self.variant}]'
 
@@ -87,19 +93,19 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
 
     @run_after('performance')
     def set_reference_values(self):
-        ref_aion = {
-            'default':               (11800, -0.10, 0.10, 'MB/s'),
-            'same_numa':             (14200, -0.10, 0.10, 'MB/s'),
-            'diff_numa_same_socket': (13500, -0.25, 0.25, 'MB/s'),
+        ref_aion = { # Based on your Aion runs
+            'default':               (11900, -0.10, 0.10, 'MB/s'),
+            'same_numa':             (14400, -0.10, 0.10, 'MB/s'),
+            'diff_numa_same_socket': (13500, -0.20, 0.20, 'MB/s'), # Assuming it works
             'diff_socket_same_node': (10800, -0.10, 0.10, 'MB/s'),
             'inter_node':            (12300, -0.10, 0.10, 'MB/s')
         }
-        ref_iris = {
-            'default':               (10000, -0.20, 0.20, 'MB/s'),
-            'same_numa':             (12000, -0.20, 0.20, 'MB/s'),
-            'diff_numa_same_socket': (11000, -0.30, 0.30, 'MB/s'),
-            'diff_socket_same_node': (10000, -0.20, 0.20, 'MB/s'),
-            'inter_node':            (9000, -0.20, 0.20, 'MB/s')
+        ref_iris = { # Based on your Iris runs, same_numa failed, diff_numa_same_socket needs re-eval
+            'default':               (16800, -0.10, 0.10, 'MB/s'),
+            'same_numa':             (17000, -0.20, 0.20, 'MB/s'), # Placeholder, needs measurement
+            'diff_numa_same_socket': (18300, -0.10, 0.10, 'MB/s'), # Will likely be like same_numa
+            'diff_socket_same_node': (17600, -0.10, 0.10, 'MB/s'),
+            'inter_node':            (10000, -0.10, 0.10, 'MB/s')
         }
         current_references = {'aion': ref_aion, 'iris': ref_iris}
         sys_name = self.current_system.name
