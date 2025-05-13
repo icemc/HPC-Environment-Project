@@ -1,0 +1,2 @@
+srun: error: unrecognized --cpu-bind argument "numa"
+srun: fatal: Failed to parse --cpu-bind= values.
