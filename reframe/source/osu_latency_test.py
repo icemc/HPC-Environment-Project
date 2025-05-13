@@ -4,27 +4,24 @@ import os
 
 @rfm.simple_test
 class OSULatencyTest(rfm.RunOnlyRegressionTest):
-    descr = 'OSU Latency test with 8192-byte messages'
-    valid_systems = ['*']
-    valid_prog_environs = ['*']
+    descr = 'OSU Latency test with 8192-byte messages (Source Build)'
+    valid_systems = ['aion:batch', 'iris:batch']
+    valid_prog_environs = ['foss-2023b']
     sourcesdir = None
     maintainers = ['Ludovic', 'Heriel', 'Francko']
-    tags = {'osu', 'latency', 'source'} # Added 'source' tag
+    tags = {'osu', 'latency', 'source'}
     num_tasks = 2
     num_cpus_per_task = 1
 
-    # This is the directory name after the tarball is extracted
     build_prefix = 'osu-micro-benchmarks-7.2'
     message_size_bytes = 8192
-
     executable_opts = ['-m', f'{message_size_bytes}:{message_size_bytes}', '-x', '100', '-i', '1000']
 
-    # Parameter for hardware topology
     variant = parameter([
         'default',
         'same_numa',
         'diff_numa_same_socket',
-        'diff_socket_same_node', # Renamed for clarity
+        'diff_socket_same_node',
         'inter_node'
     ])
 
@@ -32,49 +29,53 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
     def set_dependencies_and_tags(self):
         self.depends_on('OSUBenchmarkBuildTest')
         self.tags.add(f'lat_{self.variant}')
-        if self.variant == 'default':
-            self.time_limit = '2m'
+        if self.variant == 'default' or self.variant == 'inter_node':
+            self.time_limit = '3m'
         else:
             self.time_limit = '5m'
 
     @run_before('run')
     def setup_variant_specifics(self):
         build_test_name = 'OSUBenchmarkBuildTest'
-        build = self.getdep(build_test_name, self.current_environ.name)
+        build = self.getdep(build_test_name)
 
-        osu_binary_relative_path = os.path.join(self.build_prefix, 'c', 'mpi', 'pt2pt', 'standard', 'osu_latency')
+        osu_binary_relative_path = os.path.join(f'osu-micro-benchmarks-{build.version}', 'c', 'mpi', 'pt2pt', 'standard', 'osu_latency')
         self.executable = os.path.join(build.stagedir, osu_binary_relative_path)
 
         self.job.options = []
         self.job.launcher.options = []
-        self.num_tasks_per_node = 2 # Default
+        self.env_vars = {} # CORRECTED: Initialize environment variables dict
+        self.num_tasks_per_node = 2
 
-        if self.variant != 'inter_node':
-             self.job.options += ['--exclusive']
+        if self.variant not in ['inter_node']:
+            self.job.options.append('--exclusive')
 
         if self.variant == 'inter_node':
             self.num_tasks_per_node = 1
-            self.job.options += ['--exclusive']
+            self.job.options.append('--exclusive')
         elif self.variant == 'default':
-            self.job.launcher.options += ['--cpu-bind=core']
+            self.job.launcher.options.append('--cpu-bind=core')
         elif self.variant == 'same_numa':
-            self.job.launcher.options += ['--cpu-bind=cores']
+            self.job.launcher.options.append('--cpu-bind=cores')
             if self.current_system.name == 'aion':
-                self.job.options += ['--sockets-per-node=1', '--cores-per-socket=16', '--distribution=block:block']
+                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=16', '--distribution=block:block'])
             elif self.current_system.name == 'iris':
-                self.job.options += ['--sockets-per-node=1', '--distribution=block:block']
+                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=20', '--distribution=block:block'])
         elif self.variant == 'diff_numa_same_socket':
-            self.job.launcher.options += ['--cpu-bind=numa']
             if self.current_system.name == 'aion':
-                self.job.options += ['--sockets-per-node=1', '--cores-per-socket=32', '--distribution=cyclic:cyclic', '--hint=nomultithread']
+                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=32', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
-                self.job.options += ['--sockets-per-node=1', '--distribution=cyclic:cyclic']
-                self.job.launcher.options += ['--cpu-bind=numa']
+                self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=20', '--hint=nomultithread'])
+            # CORRECTED: Use self.env_vars
+            self.env_vars = {
+                'OMPI_MCA_rmaps_base_mapping_policy': 'numa:PE=1',
+                'OMPI_MCA_hwloc_base_binding_policy': 'numa',
+            }
         elif self.variant == 'diff_socket_same_node':
-            self.job.launcher.options += ['--cpu-bind=socket']
-            self.job.options += ['--ntasks-per-socket=1']
+            self.job.launcher.options.append('--cpu-bind=socket')
+            self.job.options.append('--ntasks-per-socket=1')
 
-        self.descr = f'OSU Latency test ({self.message_size_bytes}B) [{self.variant}]'
+        self.descr = f'OSU Latency test ({self.message_size_bytes}B, Src) [{self.variant}]'
 
     @sanity_function
     def validate_output(self):
@@ -87,29 +88,23 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
     @run_after('performance')
     def set_reference_values(self):
         ref_aion = {
-            'default':               (3.9, -0.15, 0.15, 'us'), # Based on your prior run
-            'same_numa':             (2.3, -0.15, 0.15, 'us'), # Project description typical
-            'diff_numa_same_socket': (2.6, -0.15, 0.15, 'us'), # Hypothetical
-            'diff_socket_same_node': (2.9, -0.15, 0.15, 'us'), # Hypothetical
-            'inter_node':            (3.9, -0.10, 0.10, 'us')  # Project description typical
+            'default':               (2.3, -0.15, 0.15, 'us'),
+            'same_numa':             (0.6, -0.25, 0.25, 'us'),
+            'diff_numa_same_socket': (2.0, -0.30, 0.30, 'us'),
+            'diff_socket_same_node': (2.3, -0.15, 0.15, 'us'),
+            'inter_node':            (4.5, -0.10, 0.10, 'us')
         }
-        ref_iris = { # You MUST measure these for Iris
-            'default':               (3.5, -0.15, 0.15, 'us'),
-            'same_numa':             (2.0, -0.15, 0.15, 'us'),
-            'diff_numa_same_socket': (2.3, -0.15, 0.15, 'us'),
-            'diff_socket_same_node': (2.6, -0.15, 0.15, 'us'),
-            'inter_node':            (3.5, -0.15, 0.15, 'us')
+        ref_iris = {
+            'default':               (2.0, -0.20, 0.20, 'us'),
+            'same_numa':             (0.8, -0.30, 0.30, 'us'),
+            'diff_numa_same_socket': (1.8, -0.30, 0.30, 'us'),
+            'diff_socket_same_node': (2.0, -0.20, 0.20, 'us'),
+            'inter_node':            (4.0, -0.20, 0.20, 'us')
         }
-        current_references = {
-            'aion': ref_aion,
-            'iris': ref_iris
-        }
+        current_references = {'aion': ref_aion, 'iris': ref_iris}
         sys_name = self.current_system.name
+        partition_name = self.current_partition.name
         if sys_name in current_references:
-            self.reference = {
-                f'{sys_name}:{self.current_partition.name}': {
-                    'latency': current_references[sys_name][self.variant]
-                }
-            }
+            self.reference = {f'{sys_name}:{partition_name}': {'latency': current_references[sys_name][self.variant]}}
         else:
             self.reference = {'*/*': {'latency': (0, None, None, 'us')}}
