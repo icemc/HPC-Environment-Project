@@ -44,7 +44,8 @@ site_configuration = {
       'name': 'foss-2023b',
       'modules': [
         'env/testing/2023b', 
-        'toolchain/foss/2023b' 
+        'toolchain/foss/2023b',
+        'tools/EasyBuild'
       ],
       
       # compilers for this environment
