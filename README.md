@@ -17,7 +17,7 @@ root/
 │   ├── source/               # Source build test cases
 │   └── configs/
 │       └── configs.py        # ReFrame configuration files
-└── analysis/                 # Performance analysis tools
+└── analysis/                 # Sample Performance analysis tools
     ├── plot_generation.py    # Visualization scripts
     ├── iris_performance.png  # Sample output
     └── aion_performance.png  # Sample output
@@ -34,7 +34,7 @@ root/
   * Latency (µs) across different node configurations
   * Bandwidth (MB/s) for various communication patterns
 
-- Automated Reporting: Generates visual performance comparisons between:
+- Sample Reporting: Generates visual performance comparisons between:
   * Different deployment methods
   * Different HPC systems (Iris vs Aion)
 
@@ -43,7 +43,6 @@ root/
 Prerequisites:
 - Access to ULHPC cluster (Iris or Aion)
 - ReFrame 4.7.4 or later
-- Python 3.8+
 
 Accessing the HPC cluster
 1. For Iris (You will need access) 
@@ -85,26 +84,15 @@ reframe -C reframe/configs/configs.py -c reframe/easybuild -r --performance-repo
 ```
 reframe -C reframe/configs/configs.py -c reframe/eessi -r --performance-report
 ```
+### Sample Performance reports
 
-### Performance Analysis
--------------------
-After test execution, generate visual reports:
+#### 1. Aion Performance 
 
-1. Load python module
-    ```
-    lang/Python/3.11.5-GCCcore-13.2.0
-    ```
-2. Run analysis script
-    ```
-    python analysis/plot.py
-    ```
+![Aion performance](./analysis/aion_performance.png)
 
-This creates four report files:
-1. iris_performance.png - Individual Iris metrics
-2. aion_performance.png - Individual Aion metrics
-3. bandwidth_comparison.png - Cross-system bandwidth analysis
-4. latency_comparison.png - Cross-system latency analysis
+#### 2. Iris Performance 
 
+![Aion performance](./analysis/iris_performance.png)
 
 ### Resources
 -------------
