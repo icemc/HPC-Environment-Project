@@ -5,7 +5,7 @@ import os
 @rfm.simple_test
 class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
     descr = 'OSU Bandwidth test with 1MB messages (EESSI)'
-    valid_systems = ['aion:batch', 'iris:batch'] # Systems where EESSI is expected
+    valid_systems = ['aion:batch', 'iris:batch']
     valid_prog_environs = ['foss-2023b']
     sourcesdir = None
     maintainers = ['Ludovic', 'Heriel', 'Franco']
@@ -36,19 +36,19 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_variant_specifics(self):
         build_test_name = 'OSUEESSIBuildTest'
-        build_dep = self.getdep(build_test_name) # Get the dependency object
+        build_dep = self.getdep(build_test_name)
 
         self.prerun_cmds = [
             f'source /cvmfs/eessi.io/versions/{build_dep.eessi_version}/init/bash'
         ]
 
-        # Load the EESSI OSU module identified by the build_dep test
+        
         self.modules = [build_dep.expected_module_name]
         self.executable = 'osu_bw'
 
         self.job.options = []
         self.job.launcher.options = []
-        self.env_vars = {} # EESSI's module should set up MPI environment
+        self.env_vars = {} 
         self.num_tasks_per_node = 2
 
         if self.variant not in ['inter_node']:
@@ -58,30 +58,25 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 1
             self.job.options.append('--exclusive')
         elif self.variant == 'default':
-            # EESSI's MPI should handle binding, or we can provide hints
-            # Depending on the MPI in EESSI (OpenMPI, Intel MPI), options might differ
-            # For OpenMPI (common in EESSI gompi)
+            
             self.job.launcher.options.append('--cpu-bind=core')
         elif self.variant == 'same_numa':
-            self.job.launcher.options.append('--cpu-bind=cores') # OpenMPI
+            self.job.launcher.options.append('--cpu-bind=cores')
             if self.current_system.name == 'aion':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=16', '--distribution=block:block', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
         elif self.variant == 'diff_numa_same_socket':
-            # This depends heavily on the MPI implementation and system architecture
-            # Assuming OpenMPI from EESSI's gompi
             if self.current_system.name == 'aion':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=32', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
-            # OpenMPI specific environment variables for mapping
             self.env_vars.update({
                 'OMPI_MCA_rmaps_base_mapping_policy': 'numa:PE=1',
                 'OMPI_MCA_hwloc_base_binding_policy': 'numa',
             })
         elif self.variant == 'diff_socket_same_node':
-            self.job.launcher.options.append('--cpu-bind=socket') # OpenMPI
+            self.job.launcher.options.append('--cpu-bind=socket') 
             self.job.options.append('--ntasks-per-socket=1')
             if self.current_system.name == 'iris':
                 self.job.options.append(f'--cores-per-socket=1')
