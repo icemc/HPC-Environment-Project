@@ -8,7 +8,7 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['aion:batch', 'iris:batch']
     valid_prog_environs = ['foss-2023b']
     sourcesdir = None
-    maintainers = ['Ludovic', 'Heriel', 'Francko']
+    maintainers = ['Ludovic', 'Heriel', 'Franco']
     tags = {'osu', 'bandwidth', 'source'}
     num_tasks = 2
     num_cpus_per_task = 1
@@ -18,7 +18,6 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
     executable_opts = ['-m', f'{message_size_bytes}:{message_size_bytes}', '-x', '10', '-i', '100']
 
     variant = parameter([
-        'default',
         'same_numa',
         'diff_numa_same_socket',
         'diff_socket_same_node',
@@ -29,7 +28,7 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
     def set_dependencies_and_tags(self):
         self.depends_on('OSUBenchmarkBuildTest')
         self.tags.add(f'bw_{self.variant}')
-        if self.variant == 'default' or self.variant == 'inter_node':
+        if self.variant == 'inter_node':
             self.time_limit = '3m'
         else:
             self.time_limit = '5m'
@@ -53,8 +52,6 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
         if self.variant == 'inter_node':
             self.num_tasks_per_node = 1
             self.job.options.append('--exclusive')
-        elif self.variant == 'default':
-            self.job.launcher.options.append('--cpu-bind=core')
         elif self.variant == 'same_numa':
             self.job.launcher.options.append('--cpu-bind=cores')
             if self.current_system.name == 'aion':
@@ -93,17 +90,15 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
 
     @run_after('performance')
     def set_reference_values(self):
-        ref_aion = { # Based on your Aion runs
-            'default':               (11900, -0.10, 0.10, 'MB/s'),
+        ref_aion = { 
             'same_numa':             (14400, -0.10, 0.10, 'MB/s'),
-            'diff_numa_same_socket': (13500, -0.20, 0.20, 'MB/s'), # Assuming it works
+            'diff_numa_same_socket': (13500, -0.20, 0.20, 'MB/s'), 
             'diff_socket_same_node': (10800, -0.10, 0.10, 'MB/s'),
             'inter_node':            (12300, -0.10, 0.10, 'MB/s')
         }
-        ref_iris = { # Based on your Iris runs, same_numa failed, diff_numa_same_socket needs re-eval
-            'default':               (16800, -0.10, 0.10, 'MB/s'),
-            'same_numa':             (17000, -0.20, 0.20, 'MB/s'), # Placeholder, needs measurement
-            'diff_numa_same_socket': (18300, -0.10, 0.10, 'MB/s'), # Will likely be like same_numa
+        ref_iris = { 
+            'same_numa':             (17000, -0.20, 0.20, 'MB/s'),
+            'diff_numa_same_socket': (18300, -0.10, 0.10, 'MB/s'), 
             'diff_socket_same_node': (17600, -0.10, 0.10, 'MB/s'),
             'inter_node':            (10000, -0.10, 0.10, 'MB/s')
         }

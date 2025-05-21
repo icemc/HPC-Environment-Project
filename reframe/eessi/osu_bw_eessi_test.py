@@ -3,19 +3,18 @@ import reframe.utility.sanity as sn
 import os
 
 @rfm.simple_test
-class OSULatencyTest(rfm.RunOnlyRegressionTest):
-    descr = 'OSU Latency test with 8192-byte messages (Source Build)'
+class OSUBandwidthTestEESSI(rfm.RunOnlyRegressionTest):
+    descr = 'OSU Bandwidth test with 1MB messages (EESSI Module)'
     valid_systems = ['aion:batch', 'iris:batch']
     valid_prog_environs = ['foss-2023b']
     sourcesdir = None
     maintainers = ['Ludovic', 'Heriel', 'Franco']
-    tags = {'osu', 'latency', 'source'}
+    tags = {'osu', 'bandwidth', 'eessi'}
     num_tasks = 2
     num_cpus_per_task = 1
 
-    build_prefix = 'osu-micro-benchmarks-7.2'
-    message_size_bytes = 8192
-    executable_opts = ['-m', f'{message_size_bytes}:{message_size_bytes}', '-x', '100', '-i', '1000']
+    message_size_bytes = 1048576
+    executable_opts = ['-m', f'{message_size_bytes}:{message_size_bytes}', '-x', '10', '-i', '100']
 
     variant = parameter([
         'same_numa',
@@ -26,8 +25,8 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def set_dependencies_and_tags(self):
-        self.depends_on('OSUBenchmarkBuildTest')
-        self.tags.add(f'lat_{self.variant}')
+        self.depends_on('OSUEESSIBuildTest')
+        self.tags.add(f'bw_{self.variant}')
         if self.variant == 'inter_node':
             self.time_limit = '3m'
         else:
@@ -35,12 +34,7 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def setup_variant_specifics(self):
-        build_test_name = 'OSUBenchmarkBuildTest'
-        build = self.getdep(build_test_name)
-
-        osu_binary_relative_path = os.path.join(f'osu-micro-benchmarks-{build.version}', 'c', 'mpi', 'pt2pt', 'standard', 'osu_latency')
-        self.executable = os.path.join(build.stagedir, osu_binary_relative_path)
-
+        self.executable = 'osu_bw' 
         self.job.options = []
         self.job.launcher.options = []
         self.env_vars = {}
@@ -52,20 +46,17 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
         if self.variant == 'inter_node':
             self.num_tasks_per_node = 1
             self.job.options.append('--exclusive')
+
         elif self.variant == 'same_numa':
             self.job.launcher.options.append('--cpu-bind=cores')
             if self.current_system.name == 'aion':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=16', '--distribution=block:block', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
-                # Iris Regular Skylake: 14 cores/socket, 1 socket = 1 NUMA
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
         elif self.variant == 'diff_numa_same_socket':
             if self.current_system.name == 'aion':
-                # Aion: Request 1 socket, 32 cores (2 NUMA regions)
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=32', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
-                # Iris: 1 socket = 1 NUMA (14 cores). This variant will behave like 'same_numa'.
-                # Allocate 1 socket (1 NUMA node). OMPI will map both tasks to this single NUMA node.
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
 
             self.env_vars = {
@@ -75,38 +66,45 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
         elif self.variant == 'diff_socket_same_node':
             self.job.launcher.options.append('--cpu-bind=socket')
             self.job.options.append('--ntasks-per-socket=1')
-            if self.current_system.name == 'iris': # Ensure we get enough cores for 2 tasks on 2 sockets
-                self.job.options.append(f'--cores-per-socket=1') # Request at least 1 core per allocated socket for the task
+            if self.current_system.name == 'iris':
+                self.job.options.append('--cores-per-socket=1')
 
+        self.descr = f'OSU Bandwidth test (1MB, EESSI) [{self.variant}]'
 
-        self.descr = f'OSU Latency test ({self.message_size_bytes}B, Src) [{self.variant}]'
+    @run_before('run')
+    def load_eessi_modules(self):
+        # Ensure the environment from the dependency is reused
+        self.prerun_cmds += [
+            'module load EESSI',
+            'module load OSU-Micro-Benchmarks/7.2-gompi-2023b'
+        ]
 
     @sanity_function
     def validate_output(self):
-        return sn.assert_found(r'# OSU MPI Latency Test', self.stdout)
+        return sn.assert_found(r'# OSU MPI Bandwidth Test', self.stdout)
 
-    @performance_function('us')
-    def latency(self):
+    @performance_function('MB/s')
+    def bandwidth(self):
         return sn.extractsingle(rf'^\s*{self.message_size_bytes}\s+(\S+)', self.stdout, 1, float)
 
     @run_after('performance')
     def set_reference_values(self):
-        ref_aion = { # Based on your Aion runs
-            'same_numa':             (0.6, -0.25, 0.25, 'us'),
-            'diff_numa_same_socket': (2.0, -0.30, 0.30, 'us'), # Assuming it works
-            'diff_socket_same_node': (2.3, -0.15, 0.15, 'us'),
-            'inter_node':            (4.5, -0.10, 0.10, 'us')
+        ref_aion = {
+            'same_numa':             (14400, -0.10, 0.10, 'MB/s'),
+            'diff_numa_same_socket': (13500, -0.20, 0.20, 'MB/s'),
+            'diff_socket_same_node': (10800, -0.10, 0.10, 'MB/s'),
+            'inter_node':            (12300, -0.10, 0.10, 'MB/s')
         }
-        ref_iris = { # Based on your Iris runs, same_numa failed, diff_numa_same_socket needs re-eval
-            'same_numa':             (4.0, -0.20, 0.20, 'us'), # Placeholder, needs measurement
-            'diff_numa_same_socket': (4.4, -0.10, 0.10, 'us'), # Will likely be like same_numa
-            'diff_socket_same_node': (11.8, -0.10, 0.10, 'us'),# High, investigate
-            'inter_node':            (4.6, -0.10, 0.10, 'us')
+        ref_iris = {
+            'same_numa':             (17000, -0.20, 0.20, 'MB/s'),
+            'diff_numa_same_socket': (18300, -0.10, 0.10, 'MB/s'),
+            'diff_socket_same_node': (17600, -0.10, 0.10, 'MB/s'),
+            'inter_node':            (10000, -0.10, 0.10, 'MB/s')
         }
         current_references = {'aion': ref_aion, 'iris': ref_iris}
         sys_name = self.current_system.name
         partition_name = self.current_partition.name
         if sys_name in current_references:
-            self.reference = {f'{sys_name}:{partition_name}': {'latency': current_references[sys_name][self.variant]}}
+            self.reference = {f'{sys_name}:{partition_name}': {'bandwidth': current_references[sys_name][self.variant]}}
         else:
-            self.reference = {'*/*': {'latency': (0, None, None, 'us')}}
+            self.reference = {'*/*': {'bandwidth': (0, None, None, 'MB/s')}}
