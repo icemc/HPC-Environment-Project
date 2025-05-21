@@ -1,0 +1,66 @@
+
+Currently Loaded Modules:
+  1) env/testing/2023b                       (S)
+  2) compiler/GCCcore/13.2.0
+  3) lib/zlib/1.2.13-GCCcore-13.2.0
+  4) tools/binutils/2.40-GCCcore-13.2.0
+  5) compiler/GCC/13.2.0
+  6) tools/numactl/2.0.16-GCCcore-13.2.0
+  7) tools/XZ/5.4.4-GCCcore-13.2.0
+  8) lib/libxml2/2.11.5-GCCcore-13.2.0
+  9) system/libpciaccess/0.17-GCCcore-13.2.0
+ 10) system/hwloc/2.9.2-GCCcore-13.2.0
+ 11) system/OpenSSL/1.1
+ 12) lib/libevent/2.1.12-GCCcore-13.2.0
+ 13) lib/UCX/1.15.0-GCCcore-13.2.0
+ 14) lib/libfabric/1.19.0-GCCcore-13.2.0
+ 15) lib/PMIx/4.2.6-GCCcore-13.2.0
+ 16) lib/UCC/1.2.0-GCCcore-13.2.0
+ 17) mpi/OpenMPI/4.1.6-GCC-13.2.0
+ 18) numlib/OpenBLAS/0.3.24-GCC-13.2.0
+ 19) lib/FlexiBLAS/3.3.1-GCC-13.2.0
+ 20) numlib/FFTW/3.3.10-GCC-13.2.0
+ 21) toolchain/gompi/2023b
+ 22) numlib/FFTW.MPI/3.3.10-gompi-2023b
+ 23) numlib/ScaLAPACK/2.2.0-gompi-2023b-fb
+ 24) toolchain/foss/2023b
+ 25) tools/EasyBuild/5.0.0
+
+  Where:
+   S:  Module is Sticky, requires --force to unload or purge
+
+ 
+
+
+WARNING: Found one or more non-allowed loaded (EasyBuild-generated) modules in current environment:
+* compiler/GCCcore/13.2.0
+* compiler/GCCcore/13.2.0
+* lib/zlib/1.2.13-GCCcore-13.2.0
+* tools/binutils/2.40-GCCcore-13.2.0
+* tools/numactl/2.0.16-GCCcore-13.2.0
+* tools/XZ/5.4.4-GCCcore-13.2.0
+* lib/libxml2/2.11.5-GCCcore-13.2.0
+* system/libpciaccess/0.17-GCCcore-13.2.0
+* system/hwloc/2.9.2-GCCcore-13.2.0
+* system/OpenSSL/1.1
+* lib/libevent/2.1.12-GCCcore-13.2.0
+* lib/UCX/1.15.0-GCCcore-13.2.0
+* lib/libfabric/1.19.0-GCCcore-13.2.0
+* lib/PMIx/4.2.6-GCCcore-13.2.0
+* lib/UCC/1.2.0-GCCcore-13.2.0
+* mpi/OpenMPI/4.1.6-GCC-13.2.0
+* numlib/OpenBLAS/0.3.24-GCC-13.2.0
+* lib/FlexiBLAS/3.3.1-GCC-13.2.0
+* numlib/FFTW/3.3.10-GCC-13.2.0
+* toolchain/gompi/2023b
+* numlib/FFTW.MPI/3.3.10-gompi-2023b
+* numlib/ScaLAPACK/2.2.0-gompi-2023b-fb
+* toolchain/foss/2023b
+
+This is not recommended since it may affect the installation procedure(s) performed by EasyBuild.
+
+To make EasyBuild allow particular loaded modules, use the --allow-loaded-modules configuration option.
+To specify action to take when loaded modules are detected, use --detect-loaded-modules={error,ignore,purge,unload,warn}.
+
+See https://docs.easybuild.io/detecting-loaded-modules/ for more information.
+
