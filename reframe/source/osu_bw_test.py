@@ -8,7 +8,7 @@ class OSUBandwidthTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['aion:batch', 'iris:batch']
     valid_prog_environs = ['foss-2023b']
     sourcesdir = None
-    maintainers = ['Ludovic', 'Heriel', 'Francko']
+    maintainers = ['Ludovic', 'Heriel', 'Franco']
     tags = {'osu', 'bandwidth', 'source'}
     num_tasks = 2
     num_cpus_per_task = 1

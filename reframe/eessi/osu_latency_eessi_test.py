@@ -3,18 +3,18 @@ import reframe.utility.sanity as sn
 import os
 
 @rfm.simple_test
-class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
-    descr = 'OSU Bandwidth test with 1MB messages (EESSI)'
-    valid_systems = ['aion:batch', 'iris:batch'] # Systems where EESSI is expected
+class OSULatencyTest(rfm.RunOnlyRegressionTest):
+    descr = 'OSU Latency test with 8192-byte messages (EESSI)'
+    valid_systems = ['*']
     valid_prog_environs = ['foss-2023b']
     sourcesdir = None
     maintainers = ['Ludovic', 'Heriel', 'Franco']
-    tags = {'osu', 'bandwidth', 'eessi'}
+    tags = {'osu', 'latency', 'eessi'}
     num_tasks = 2
     num_cpus_per_task = 1
 
-    message_size_bytes = 1048576
-    executable_opts = ['-m', f'{message_size_bytes}:{message_size_bytes}', '-x', '10', '-i', '100']
+    message_size_bytes = 8192
+    executable_opts = ['-m', f'{message_size_bytes}:{message_size_bytes}', '-x', '100', '-i', '1000']
 
     variant = parameter([
         'default',
@@ -27,7 +27,7 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
     @run_after('init')
     def set_dependencies_and_tags(self):
         self.depends_on('OSUEESSIBuildTest')
-        self.tags.add(f'bw_{self.variant}')
+        self.tags.add(f'lat_{self.variant}')
         if self.variant == 'default' or self.variant == 'inter_node':
             self.time_limit = '3m'
         else:
@@ -35,20 +35,17 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def setup_variant_specifics(self):
-        build_test_name = 'OSUEESSIBuildTest'
-        build_dep = self.getdep(build_test_name) # Get the dependency object
+        build = self.getdep('OSUEESSIBuildTest')
 
         self.prerun_cmds = [
-            f'source /cvmfs/eessi.io/versions/{build_dep.eessi_version}/init/bash'
+            f'source /cvmfs/eessi.io/versions/{build.eessi_version}/init/bash'
         ]
-
-        # Load the EESSI OSU module identified by the build_dep test
-        self.modules = [build_dep.expected_module_name]
-        self.executable = 'osu_bw'
+        self.modules = [build.expected_module_name]
+        self.executable = 'osu_latency'
 
         self.job.options = []
         self.job.launcher.options = []
-        self.env_vars = {} # EESSI's module should set up MPI environment
+        self.env_vars = {}
         self.num_tasks_per_node = 2
 
         if self.variant not in ['inter_node']:
@@ -86,39 +83,37 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
             if self.current_system.name == 'iris':
                 self.job.options.append(f'--cores-per-socket=1')
 
-        self.descr = f'OSU Bandwidth test (1MB, EESSI {build_dep.eessi_version}, OSU {build_dep.osu_version_in_eessi}) [{self.variant}]'
+        self.descr = f'OSU Latency test ({self.message_size_bytes}B, EB) [{self.variant}]'
 
     @sanity_function
     def validate_output(self):
-        return sn.assert_found(r'# OSU MPI Bandwidth Test', self.stdout)
+        return sn.assert_found(r'# OSU MPI Latency Test', self.stdout)
 
-    @performance_function('MB/s')
-    def bandwidth(self):
+    @performance_function('us')
+    def latency(self):
         return sn.extractsingle(rf'^\s*{self.message_size_bytes}\s+(\S+)', self.stdout, 1, float)
 
     @run_after('performance')
     def set_reference_values(self):
-        # NOTE: These reference values are copied.
-        # Performance with EESSI's OSU might differ. Adjust as needed.
         ref_aion = {
-            'default':               (11900, -0.10, 0.10, 'MB/s'),
-            'same_numa':             (14400, -0.10, 0.10, 'MB/s'),
-            'diff_numa_same_socket': (13500, -0.20, 0.20, 'MB/s'),
-            'diff_socket_same_node': (10800, -0.10, 0.10, 'MB/s'),
-            'inter_node':            (12300, -0.10, 0.10, 'MB/s')
+            'default':               (2.3, -0.20, 0.20, 'us'),
+            'same_numa':             (0.6, -0.30, 0.30, 'us'),
+            'diff_numa_same_socket': (2.0, -0.30, 0.30, 'us'),
+            'diff_socket_same_node': (2.3, -0.20, 0.20, 'us'),
+            'inter_node':            (4.5, -0.15, 0.15, 'us')
         }
-        ref_iris = {
-            'default':               (16800, -0.10, 0.10, 'MB/s'),
-            'same_numa':             (17000, -0.20, 0.20, 'MB/s'),
-            'diff_numa_same_socket': (18300, -0.10, 0.10, 'MB/s'),
-            'diff_socket_same_node': (17600, -0.10, 0.10, 'MB/s'),
-            'inter_node':            (10000, -0.10, 0.10, 'MB/s')
+        ref_iris = { 
+            'default':               (4.5, -0.15, 0.15, 'us'),
+            'same_numa':             (1.0, -0.30, 0.30, 'us'), 
+            'diff_numa_same_socket': (4.4, -0.15, 0.15, 'us'), 
+            'diff_socket_same_node': (3.0, -0.25, 0.25, 'us'), 
+            'inter_node':            (4.6, -0.15, 0.15, 'us')
         }
+
         current_references = {'aion': ref_aion, 'iris': ref_iris}
         sys_name = self.current_system.name
         partition_name = self.current_partition.name
-
-        self.reference = {'*/*': {'bandwidth': (0, None, None, 'MB/s')}}
-        if sys_name in current_references and self.variant in current_references[sys_name]:
-            ref_key = f'{sys_name}:{partition_name}'
-            self.reference[ref_key] = {'bandwidth': current_references[sys_name][self.variant]}
+        if sys_name in current_references:
+            self.reference = {f'{sys_name}:{partition_name}': {'latency': current_references[sys_name][self.variant]}}
+        else:
+            self.reference = {'*/*': {'latency': (0, None, None, 'us')}}

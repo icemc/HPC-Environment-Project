@@ -7,7 +7,7 @@ class OSUBenchmarkBuildTest(rfm.CompileOnlyRegressionTest):
     descr = 'Compile OSU Micro-Benchmark 7.2 from source'
     valid_systems = ['*']
     valid_prog_environs = ['*']
-    maintainers = ['Ludovic', 'Heriel', 'Francko']
+    maintainers = ['Ludovic', 'Heriel', 'Franco']
     tags = {'osu', 'build'}
 
     build_prefix = variable(str)
