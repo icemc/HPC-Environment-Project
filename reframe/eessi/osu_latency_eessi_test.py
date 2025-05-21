@@ -3,7 +3,7 @@ import reframe.utility.sanity as sn
 import os
 
 @rfm.simple_test
-class OSULatencyTest(rfm.RunOnlyRegressionTest):
+class OSULatencyTestEESSI(rfm.RunOnlyRegressionTest):
     descr = 'OSU Latency test with 8192-byte messages (EESSI)'
     valid_systems = ['*']
     valid_prog_environs = ['foss-2023b']
