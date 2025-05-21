@@ -5,7 +5,7 @@ import os
 @rfm.simple_test
 class OSULatencyTestEESSI(rfm.RunOnlyRegressionTest):
     descr = 'OSU Latency test with 8192-byte messages (EESSI)'
-    valid_systems = ['*']
+    valid_systems = ['aion:batch', 'iris:batch']
     valid_prog_environs = ['foss-2023b']
     sourcesdir = None
     maintainers = ['Ludovic', 'Heriel', 'Franco']

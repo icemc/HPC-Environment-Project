@@ -26,7 +26,7 @@ class OSUBandwidthTestEESSI(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def set_dependencies_and_tags(self):
-        self.depends_on('OSUBenchmarkModuleCheck')
+        self.depends_on('OSUEESSIBuildTest')
         self.tags.add(f'bw_{self.variant}')
         if self.variant == 'default' or self.variant == 'inter_node':
             self.time_limit = '3m'

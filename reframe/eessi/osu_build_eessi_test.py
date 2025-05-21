@@ -2,10 +2,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 @rfm.simple_test
-class OSUBenchmarkModuleCheck(rfm.RunOnlyRegressionTest):
+class OSUEESSIBuildTest(rfm.RunOnlyRegressionTest):
     descr = 'Check OSU Micro-Benchmark binaries via EESSI module'
-    valid_systems = ['*']
-    valid_prog_environs = ['*']
+    valid_systems = ['aion:batch', 'iris:batch']
+    valid_prog_environs = ['foss-2023b']
     maintainers = ['Ludovic', 'Heriel', 'Francko']
     tags = {'osu', 'module', 'eessi'}
 
