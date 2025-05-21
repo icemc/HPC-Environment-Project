@@ -1,1 +1,0 @@
-/mnt/aiongpfs/users/fkusek/HPC-Environment-Project/stage/aion/batch/foss-2023b/OSUEasyBuildCompileTest/easybuild/modules/all/perf/OSU-Micro-Benchmarks/7.2-foss-2023b.lua
