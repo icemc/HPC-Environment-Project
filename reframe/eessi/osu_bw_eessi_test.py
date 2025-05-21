@@ -17,7 +17,6 @@ class OSUBandwidthTestEESSI(rfm.RunOnlyRegressionTest):
     executable_opts = ['-m', f'{message_size_bytes}:{message_size_bytes}', '-x', '10', '-i', '100']
 
     variant = parameter([
-        'default',
         'same_numa',
         'diff_numa_same_socket',
         'diff_socket_same_node',
@@ -28,14 +27,14 @@ class OSUBandwidthTestEESSI(rfm.RunOnlyRegressionTest):
     def set_dependencies_and_tags(self):
         self.depends_on('OSUEESSIBuildTest')
         self.tags.add(f'bw_{self.variant}')
-        if self.variant == 'default' or self.variant == 'inter_node':
+        if self.variant == 'inter_node':
             self.time_limit = '3m'
         else:
             self.time_limit = '5m'
 
     @run_before('run')
     def setup_variant_specifics(self):
-        self.executable = 'osu_bw'  # Comes from EESSI module in $PATH
+        self.executable = 'osu_bw' 
         self.job.options = []
         self.job.launcher.options = []
         self.env_vars = {}
@@ -47,8 +46,7 @@ class OSUBandwidthTestEESSI(rfm.RunOnlyRegressionTest):
         if self.variant == 'inter_node':
             self.num_tasks_per_node = 1
             self.job.options.append('--exclusive')
-        elif self.variant == 'default':
-            self.job.launcher.options.append('--cpu-bind=core')
+
         elif self.variant == 'same_numa':
             self.job.launcher.options.append('--cpu-bind=cores')
             if self.current_system.name == 'aion':
@@ -92,14 +90,12 @@ class OSUBandwidthTestEESSI(rfm.RunOnlyRegressionTest):
     @run_after('performance')
     def set_reference_values(self):
         ref_aion = {
-            'default':               (11900, -0.10, 0.10, 'MB/s'),
             'same_numa':             (14400, -0.10, 0.10, 'MB/s'),
             'diff_numa_same_socket': (13500, -0.20, 0.20, 'MB/s'),
             'diff_socket_same_node': (10800, -0.10, 0.10, 'MB/s'),
             'inter_node':            (12300, -0.10, 0.10, 'MB/s')
         }
         ref_iris = {
-            'default':               (16800, -0.10, 0.10, 'MB/s'),
             'same_numa':             (17000, -0.20, 0.20, 'MB/s'),
             'diff_numa_same_socket': (18300, -0.10, 0.10, 'MB/s'),
             'diff_socket_same_node': (17600, -0.10, 0.10, 'MB/s'),
