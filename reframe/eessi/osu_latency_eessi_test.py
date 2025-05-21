@@ -33,14 +33,17 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
         else:
             self.time_limit = '5m'
 
+
+    @run_before('run')
+    def load_eessi_modules(self):
+        # Ensure the environment from the dependency is reused
+        self.prerun_cmds += [
+            'module load EESSI',
+            'module load OSU-Micro-Benchmarks/7.2-gompi-2023b'
+        ]
+
     @run_before('run')
     def setup_variant_specifics(self):
-        build = self.getdep('OSUEESSIBuildTest')
-
-        self.prerun_cmds = [
-            f'source /cvmfs/eessi.io/versions/{build.eessi_version}/init/bash'
-        ]
-        self.modules = [build.expected_module_name]
         self.executable = 'osu_latency'
 
         self.job.options = []
@@ -55,30 +58,26 @@ class OSULatencyTest(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 1
             self.job.options.append('--exclusive')
         elif self.variant == 'default':
-            # EESSI's MPI should handle binding, or we can provide hints
-            # Depending on the MPI in EESSI (OpenMPI, Intel MPI), options might differ
-            # For OpenMPI (common in EESSI gompi)
+            
             self.job.launcher.options.append('--cpu-bind=core')
         elif self.variant == 'same_numa':
-            self.job.launcher.options.append('--cpu-bind=cores') # OpenMPI
+            self.job.launcher.options.append('--cpu-bind=cores') 
             if self.current_system.name == 'aion':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=16', '--distribution=block:block', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
         elif self.variant == 'diff_numa_same_socket':
-            # This depends heavily on the MPI implementation and system architecture
-            # Assuming OpenMPI from EESSI's gompi
+           
             if self.current_system.name == 'aion':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=32', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
-            # OpenMPI specific environment variables for mapping
             self.env_vars.update({
                 'OMPI_MCA_rmaps_base_mapping_policy': 'numa:PE=1',
                 'OMPI_MCA_hwloc_base_binding_policy': 'numa',
             })
         elif self.variant == 'diff_socket_same_node':
-            self.job.launcher.options.append('--cpu-bind=socket') # OpenMPI
+            self.job.launcher.options.append('--cpu-bind=socket')
             self.job.options.append('--ntasks-per-socket=1')
             if self.current_system.name == 'iris':
                 self.job.options.append(f'--cores-per-socket=1')

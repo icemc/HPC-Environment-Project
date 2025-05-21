@@ -1,21 +1,15 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
-import os
 
 @rfm.simple_test
-class OSUEESSIBuildTest(rfm.RunOnlyRegressionTest):
+class OSUBenchmarkModuleCheck(rfm.RunOnlyRegressionTest):
     descr = 'Check OSU Micro-Benchmark binaries via EESSI module'
     valid_systems = ['*']
     valid_prog_environs = ['*']
-    maintainers = ['Ludovic', 'Heriel', 'Franco']
+    maintainers = ['Ludovic', 'Heriel', 'Francko']
     tags = {'osu', 'module', 'eessi'}
 
-    eessi_version = variable(str, value='2023.06')
-    osu_version_in_eessi = variable(str, value='7.2')
-
-    version = variable(str, value='7.2')
     module_name = variable(str, value='OSU-Micro-Benchmarks/7.2-gompi-2023b')
-    binary_dir = variable(str, value='bin')
 
     @run_before('run')
     def load_modules_and_set_binary(self):
@@ -23,9 +17,9 @@ class OSUEESSIBuildTest(rfm.RunOnlyRegressionTest):
             'module load EESSI',
             f'module load {self.module_name}'
         ]
-        self.executable = 'which osu_bw'
-        self.executable_opts = []
+        self.executable = 'which'
+        self.executable_opts = ['osu_bw']  # Check if osu_bw is in $PATH
 
     @sanity_function
-    def validate_binaries(self):
+    def validate_binary_found(self):
         return sn.assert_found(r'osu_bw', self.stdout)

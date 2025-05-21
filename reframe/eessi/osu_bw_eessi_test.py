@@ -3,8 +3,8 @@ import reframe.utility.sanity as sn
 import os
 
 @rfm.simple_test
-class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
-    descr = 'OSU Bandwidth test with 1MB messages (EESSI)'
+class OSUBandwidthTestEESSI(rfm.RunOnlyRegressionTest):
+    descr = 'OSU Bandwidth test with 1MB messages (EESSI Module)'
     valid_systems = ['aion:batch', 'iris:batch']
     valid_prog_environs = ['foss-2023b']
     sourcesdir = None
@@ -26,7 +26,7 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def set_dependencies_and_tags(self):
-        self.depends_on('OSUEESSIBuildTest')
+        self.depends_on('OSUBenchmarkModuleCheck')
         self.tags.add(f'bw_{self.variant}')
         if self.variant == 'default' or self.variant == 'inter_node':
             self.time_limit = '3m'
@@ -35,20 +35,10 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def setup_variant_specifics(self):
-        build_test_name = 'OSUEESSIBuildTest'
-        build_dep = self.getdep(build_test_name)
-
-        self.prerun_cmds = [
-            f'source /cvmfs/eessi.io/versions/{build_dep.eessi_version}/init/bash'
-        ]
-
-        
-        self.modules = [build_dep.expected_module_name]
-        self.executable = 'osu_bw'
-
+        self.executable = 'osu_bw'  # Comes from EESSI module in $PATH
         self.job.options = []
         self.job.launcher.options = []
-        self.env_vars = {} 
+        self.env_vars = {}
         self.num_tasks_per_node = 2
 
         if self.variant not in ['inter_node']:
@@ -58,7 +48,6 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 1
             self.job.options.append('--exclusive')
         elif self.variant == 'default':
-            
             self.job.launcher.options.append('--cpu-bind=core')
         elif self.variant == 'same_numa':
             self.job.launcher.options.append('--cpu-bind=cores')
@@ -71,17 +60,26 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=32', '--hint=nomultithread'])
             elif self.current_system.name == 'iris':
                 self.job.options.extend(['--sockets-per-node=1', '--cores-per-socket=14', '--distribution=block:block', '--hint=nomultithread'])
-            self.env_vars.update({
+
+            self.env_vars = {
                 'OMPI_MCA_rmaps_base_mapping_policy': 'numa:PE=1',
                 'OMPI_MCA_hwloc_base_binding_policy': 'numa',
-            })
+            }
         elif self.variant == 'diff_socket_same_node':
-            self.job.launcher.options.append('--cpu-bind=socket') 
+            self.job.launcher.options.append('--cpu-bind=socket')
             self.job.options.append('--ntasks-per-socket=1')
             if self.current_system.name == 'iris':
-                self.job.options.append(f'--cores-per-socket=1')
+                self.job.options.append('--cores-per-socket=1')
 
-        self.descr = f'OSU Bandwidth test (1MB, EESSI {build_dep.eessi_version}, OSU {build_dep.osu_version_in_eessi}) [{self.variant}]'
+        self.descr = f'OSU Bandwidth test (1MB, EESSI) [{self.variant}]'
+
+    @run_before('run')
+    def load_eessi_modules(self):
+        # Ensure the environment from the dependency is reused
+        self.prerun_cmds += [
+            'module load EESSI',
+            'module load OSU-Micro-Benchmarks/7.2-gompi-2023b'
+        ]
 
     @sanity_function
     def validate_output(self):
@@ -93,8 +91,6 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
 
     @run_after('performance')
     def set_reference_values(self):
-        # NOTE: These reference values are copied.
-        # Performance with EESSI's OSU might differ. Adjust as needed.
         ref_aion = {
             'default':               (11900, -0.10, 0.10, 'MB/s'),
             'same_numa':             (14400, -0.10, 0.10, 'MB/s'),
@@ -112,8 +108,7 @@ class OSUEESSIBandwidthTest(rfm.RunOnlyRegressionTest):
         current_references = {'aion': ref_aion, 'iris': ref_iris}
         sys_name = self.current_system.name
         partition_name = self.current_partition.name
-
-        self.reference = {'*/*': {'bandwidth': (0, None, None, 'MB/s')}}
-        if sys_name in current_references and self.variant in current_references[sys_name]:
-            ref_key = f'{sys_name}:{partition_name}'
-            self.reference[ref_key] = {'bandwidth': current_references[sys_name][self.variant]}
+        if sys_name in current_references:
+            self.reference = {f'{sys_name}:{partition_name}': {'bandwidth': current_references[sys_name][self.variant]}}
+        else:
+            self.reference = {'*/*': {'bandwidth': (0, None, None, 'MB/s')}}
