@@ -1,3 +1,7 @@
+import reframe as rfm
+import reframe.utility.sanity as sn
+import os
+
 @rfm.simple_test
 class OSUEESSIBuildTest(rfm.RunOnlyRegressionTest):
     descr = 'Check OSU Micro-Benchmark binaries via EESSI module'
@@ -6,7 +10,7 @@ class OSUEESSIBuildTest(rfm.RunOnlyRegressionTest):
     maintainers = ['Ludovic', 'Heriel', 'Franco']
     tags = {'osu', 'module', 'eessi'}
 
-    eessi_version = variable(str, value='2023.06')  
+    eessi_version = variable(str, value='2023.06')
     osu_version_in_eessi = variable(str, value='7.2')
 
     version = variable(str, value='7.2')
