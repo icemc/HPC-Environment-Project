@@ -50,7 +50,7 @@ Accessing the HPC cluster
     ssh iris-cluster
     salloc -p interactive --qos debug --time=2:00:00 -N 1 -n 1 -c 1
     ```
-2. For Aoin (You will need access) 
+2. For Aion (You will need access) 
     ``` 
     ssh aion-cluster
     salloc -p interactive --qos debug --time=2:00:00 -N 1 -n 1 -c 1
